@@ -66,6 +66,43 @@ int main() {
        << setfill('0') << left << 1 + y_frac / 16.0 << " x 2^("
        << (((y_exp - 4) > 0) ? "+" : "") << y_exp - 4 << ") = " << y_val << endl;
 
+  cout << endl << "addition of the values: " << endl;
+  if (y_exp > x_exp) {
+    cout << "operands are swapped" << endl;
+    int t_sign, t_frac, t_exp;
+    //store temp = x
+    t_sign = x_sign;
+    t_frac = x_frac;
+    t_exp  = x_exp;
+    //load x = y
+    x_sign = y_sign;
+    x_frac = y_frac;
+    x_exp  = y_exp;
+    //load y = temp
+    y_sign = t_sign;
+    y_frac = t_frac;
+    y_exp  = t_exp;
+        cout << "internal rep of first value: " << setw(3) << 1 << "." << toBinary(x_frac, 4)
+         << " x 2^(";
+    if((x_exp - 4) > 0) cout << "+";
+    cout << x_exp - 4 << ")" << endl;
+
+    cout << "internal rep of second value: " << setw(2) << 1 << "." << toBinary(y_frac, 4)
+         << " x 2^(";
+    if((y_exp - 4) > 0) cout << "+";
+    cout << y_exp - 4 << ")" << endl;
+  }
+
+  while (x_exp != y_exp) {
+      cout << "second operand shifted to equalize exponents" << endl;
+      //shift it
+      cout << "internal rep of second value: " << setw(2) << 1 << "." << toBinary(y_frac, 4)
+       << " x 2^(";
+      if((y_exp - 4) > 0) cout << "+";
+      cout << y_exp - 4 << ")" << endl;
+  }
+
+  cout << "addition takes place" << endl;
 
   return 0;
 }
