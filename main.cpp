@@ -112,7 +112,6 @@ int main() {
   }
 
   if (x_sign == 1) {
-    x_sign = 0;
     x_frac = ~x_frac + 1;
     x_hide = x_hide ^ 1;
     cout << "first operand negated" << endl;
@@ -124,7 +123,6 @@ int main() {
   }
 
   if (y_sign == 1) {
-    y_sign = 0;
     y_frac = ~y_frac + 1;
     y_hide = y_hide ^ 1;
     cout << "second operand negated" << endl;
@@ -147,26 +145,26 @@ int main() {
 
 
   s_exp = x_exp;
-  s_gr = x_gr ^ y_gr;
-  s_frac = x_frac ^ y_frac;
+  s_gr = x_gr + y_gr;
+  s_frac = x_frac + y_frac;
   if(s_gr > 0x3) {
-    s_frac = s_frac ^ ((s_gr & (0x4)) >> 1);
+    s_frac = s_frac + 0x1;
     s_gr = s_gr & 0x3;
   }
 
-  s_hide = x_hide ^ y_hide;
-    cout<< "s_hide is " << s_hide;
+  s_hide = x_hide + y_hide;
+
   if(s_frac > 0xf) {
-    s_hide = s_hide ^ ((s_frac & (0x10)) >> 4);
+    s_hide = s_hide + 0x1;
     s_frac = s_frac & 0xf;
   }
-  s_sign = x_sign ^ y_sign;
-  cout<< "s_hide is " << s_hide;
+  s_sign = x_sign + y_sign;
+
   if(s_hide > 0x1) {
-    s_sign = s_sign ^ ((s_hide & (0x2)) >> 1);
+    s_sign = s_sign + 0x1;
     s_hide = s_hide & 1;
   }
-  cout<< "s_sign is " << s_sign;
+
   s_sign = s_sign & 0x1;
 
   cout << "internal rep of sum: " << setw(10) << s_sign << s_hide << "." << toBinary(s_frac, 4)
@@ -174,7 +172,16 @@ int main() {
   if((s_exp - 4) > 0) cout << "+";
   cout << s_exp - 4 << ")" << endl;
 
-  if(s_hide < 0x1) {
+  if(s_sign == 0x1) {
+    cout << "sum normalized" << endl;
+    while (s_hide < 0x1) {
+      s_gr = ((s_frac & 1) << 1) | (s_gr>>1);
+      s_frac = (s_frac >> 1) | (s_hide << 3);
+      s_hide = s_sign;
+      s_exp++;
+    }
+  }
+  else {
     cout << "sum normalized" << endl;
     while (s_hide < 0x1) {
       s_hide = ((s_hide << 1) & 0x1) | ((s_frac >> 3) & 1);
