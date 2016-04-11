@@ -68,6 +68,7 @@ int main() {
        << setfill('0') << left << y_hide + y_frac / 16.0 << " x 2^("
        << (((y_exp - 4) > 0) ? "+" : "") << y_exp - 4 << ") = " << y_val << endl;
 
+  
   cout << endl << "addition of the values: " << endl;
   if (y_exp > x_exp) {
     cout << "operands are swapped" << endl;
@@ -84,24 +85,27 @@ int main() {
     y_sign = t_sign;
     y_frac = t_frac;
     y_exp  = t_exp;
-        cout << "internal rep of first value: " << setw(3) << 1 << "." << toBinary(x_frac, 4)
-         << " x 2^(";
-    if((x_exp - 4) > 0) cout << "+";
-    cout << x_exp - 4 << ")" << endl;
+  cout << "internal rep of first value: " << setw(3) << x_hide << "." << toBinary(x_frac, 4)
+       << " " << toBinary(x_gr, 2) << " x 2^(";
+  if((x_exp - 4) > 0) cout << "+";
+  cout << x_exp - 4 << ")" << endl;
 
-    cout << "internal rep of second value: " << setw(2) << 1 << "." << toBinary(y_frac, 4)
-         << " x 2^(";
-    if((y_exp - 4) > 0) cout << "+";
-    cout << y_exp - 4 << ")" << endl;
+  cout << "internal rep of second value: " << setw(2) << y_hide << "." << toBinary(y_frac, 4)
+       << " " << toBinary(y_gr, 2) << " x 2^(";
+  if((y_exp - 4) > 0) cout << "+";
+  cout << y_exp - 4 << ")" << endl;
   }
 
   while (x_exp != y_exp) {
       cout << "second operand shifted to equalize exponents" << endl;
-      //shift it
-      cout << "internal rep of second value: " << setw(2) << 1 << "." << toBinary(y_frac, 4)
-       << " x 2^(";
-      if((y_exp - 4) > 0) cout << "+";
-      cout << y_exp - 4 << ")" << endl;
+      y_gr = ((y_frac & 1) << 1) | (y_gr>>1);
+      y_frac = (y_frac >> 1) | (y_hide << 3);
+      y_hide = 0;
+      y_exp++;
+    cout << "internal rep of second value: " << setw(2) << y_hide << "." << toBinary(y_frac, 4)
+         << " " << toBinary(y_gr, 2) << " x 2^(";
+    if((y_exp - 4) > 0) cout << "+";
+    cout << y_exp - 4 << ")" << endl;
   }
 
   cout << "addition takes place" << endl;
