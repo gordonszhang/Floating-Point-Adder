@@ -70,34 +70,32 @@ int main() {
        << setfill(' ') << right << endl;
 
 
+  
   cout << endl << "addition of the values: " << endl;
   if (y_exp > x_exp) {
     cout << "operands are swapped" << endl;
-    int t_sign, t_hide, t_frac, t_exp;
+    int t_sign, t_frac, t_exp;
     //store temp = x
     t_sign = x_sign;
     t_frac = x_frac;
     t_exp  = x_exp;
-    t_hide = x_hide;
     //load x = y
     x_sign = y_sign;
     x_frac = y_frac;
     x_exp  = y_exp;
-    x_hide = y_hide;
     //load y = temp
     y_sign = t_sign;
     y_frac = t_frac;
     y_exp  = t_exp;
-    y_hide = t_hide;
-  cout << "internal rep of first value: " << setw(3) << x_hide << "." << toBinary(x_frac, 4)
+    cout << "internal rep of first value: " << setw(3) << x_hide << "." << toBinary(x_frac, 4)
        << " " << toBinary(x_gr, 2) << " x 2^(";
-  if((x_exp - 4) > 0) cout << "+";
-  cout << x_exp - 4 << ")" << endl;
+    if((x_exp - 4) > 0) cout << "+";
+    cout << x_exp - 4 << ")" << endl;
 
-  cout << "internal rep of second value: " << setw(2) << y_hide << "." << toBinary(y_frac, 4)
-       << " " << toBinary(y_gr, 2) << " x 2^(";
-  if((y_exp - 4) > 0) cout << "+";
-  cout << y_exp - 4 << ")" << endl;
+    cout << "internal rep of second value: " << setw(2) << y_hide << "." << toBinary(y_frac, 4)
+         << " " << toBinary(y_gr, 2) << " x 2^(";
+    if((y_exp - 4) > 0) cout << "+";
+    cout << y_exp - 4 << ")" << endl;
   }
 
   while (x_exp != y_exp) {
@@ -112,7 +110,41 @@ int main() {
     cout << y_exp - 4 << ")" << endl;
   }
 
+  if (x_sign == 1) {
+    x_sign = 0;
+    x_frac = ~x_frac;
+    x_gr = ~x_gr + 1;
+    cout << "first operand negated" << endl;
+        cout << "internal rep of first value: " << setw(3) << x_hide << "." << toBinary(x_frac, 4)
+       << " " << toBinary(x_gr, 2) << " x 2^(";
+    if((x_exp - 4) > 0) cout << "+";
+    cout << x_exp - 4 << ")" << endl;
+
+  }
+
+  if (y_sign == 1) {
+    y_sign = 0; 
+    y_frac = ~y_frac;
+    y_gr = ~y_gr + 1;
+    cout << "second operand negated" << endl;
+        cout << "internal rep of second value: " << setw(2) << y_hide << "." << toBinary(y_frac, 4)
+         << " " << toBinary(y_gr, 2) << " x 2^(";
+    if((y_exp - 4) > 0) cout << "+";
+    cout << y_exp - 4 << ")" << endl;
+  }
+
   cout << "addition takes place" << endl;
+    cout << "internal rep of first value: " << setw(3) << x_hide << "." << toBinary(x_frac, 4)
+       << " " << toBinary(x_gr, 2) << " x 2^(";
+    if((x_exp - 4) > 0) cout << "+";
+    cout << x_exp - 4 << ")" << endl;
+
+    cout << "internal rep of second value: " << setw(2) << y_hide << "." << toBinary(y_frac, 4)
+         << " " << toBinary(y_gr, 2) << " x 2^(";
+    if((y_exp - 4) > 0) cout << "+";
+    cout << y_exp - 4 << ")" << endl;
+  
+  
 
   return 0;
 }
