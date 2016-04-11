@@ -65,26 +65,30 @@ int main() {
 
   y_val = (y_hide + y_frac / 16.0) * pow(2, y_exp - 4);
   cout << "second value is: " << setw(1) << (!y_sign ? "+" : "-") << setw(6)
-       << setfill('0') << left << y_hide + y_frac / 16.0 << " x 2^("
-       << (((y_exp - 4) > 0) ? "+" : "") << y_exp - 4 << ") = " << y_val << endl;
+       << left << y_hide + y_frac / 16.0 << " x 2^("
+       << (((y_exp - 4) > 0) ? "+" : "") << y_exp - 4 << ") = " << y_val
+       << setfill(' ') << right << endl;
 
-  
+
   cout << endl << "addition of the values: " << endl;
   if (y_exp > x_exp) {
     cout << "operands are swapped" << endl;
-    int t_sign, t_frac, t_exp;
+    int t_sign, t_hide, t_frac, t_exp;
     //store temp = x
     t_sign = x_sign;
     t_frac = x_frac;
     t_exp  = x_exp;
+    t_hide = x_hide;
     //load x = y
     x_sign = y_sign;
     x_frac = y_frac;
     x_exp  = y_exp;
+    x_hide = y_hide;
     //load y = temp
     y_sign = t_sign;
     y_frac = t_frac;
     y_exp  = t_exp;
+    y_hide = t_hide;
   cout << "internal rep of first value: " << setw(3) << x_hide << "." << toBinary(x_frac, 4)
        << " " << toBinary(x_gr, 2) << " x 2^(";
   if((x_exp - 4) > 0) cout << "+";
