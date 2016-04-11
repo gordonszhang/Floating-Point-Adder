@@ -70,7 +70,7 @@ int main() {
        << setfill(' ') << right << endl;
 
 
-  
+
   cout << endl << "addition of the values: " << endl;
   if (y_exp > x_exp) {
     cout << "operands are swapped" << endl;
@@ -112,8 +112,8 @@ int main() {
 
   if (x_sign == 1) {
     x_sign = 0;
-    x_frac = ~x_frac;
-    x_gr = ~x_gr + 1;
+    x_frac = ~x_frac + 1;
+    x_hide = x_hide ^ 1;
     cout << "first operand negated" << endl;
         cout << "internal rep of first value: " << setw(3) << x_hide << "." << toBinary(x_frac, 4)
        << " " << toBinary(x_gr, 2) << " x 2^(";
@@ -123,9 +123,9 @@ int main() {
   }
 
   if (y_sign == 1) {
-    y_sign = 0; 
-    y_frac = ~y_frac;
-    y_gr = ~y_gr + 1;
+    y_sign = 0;
+    y_frac = ~y_frac + 1;
+    y_hide = y_hide ^ 1;
     cout << "second operand negated" << endl;
         cout << "internal rep of second value: " << setw(2) << y_hide << "." << toBinary(y_frac, 4)
          << " " << toBinary(y_gr, 2) << " x 2^(";
@@ -143,8 +143,8 @@ int main() {
          << " " << toBinary(y_gr, 2) << " x 2^(";
     if((y_exp - 4) > 0) cout << "+";
     cout << y_exp - 4 << ")" << endl;
-  
-  
+
+
 
   return 0;
 }
