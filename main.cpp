@@ -1,10 +1,26 @@
-#include <iostream>
-#include <iomanip>
-#include <string>
-#include <cmath>
+/*
+ *  Gordon Zhang (gordonz) John McElvenny (jlmcelv)
+ *  CPSC 2310 Section 01
+ *  Program 4
+ *  Due 4/14/16
+ *
+ *  "prog4.cpp"
+ *  Given two integer encodings of 8-bit floating point numbers (between 0-255)
+ *  through command line input, shows the steps required to add the floating
+ *  point values. In addition, prints the values of the 8-bit floating point
+ *  addends as well as their sum.
+ */
+
+#include <iostream>  // C++ input/ouput library
+#include <iomanip>   // C++ output formatting library
+#include <string>    // C++ string library
 
 using namespace std;
 
+/*  string toBinary(int, int)
+ *  Description: Converts an integer to its binary represntation in a
+ *  user-defined number of bits and returns it as a C++ string
+ */
 string toBinary(int value, int length) {
   string output = "";
   for(int i = length - 1; i >= 0; i--) {
@@ -16,32 +32,131 @@ string toBinary(int value, int length) {
   return output;
 }
 
-void internalRep(unsigned int hide, unsigned int frac, unsigned int gr, int exp,
-                 string label) {
-  cout << "internal rep of " << left << setfill(' ') << setw(14) << label
-       << toBinary(hide, 2) << "." << toBinary(frac, 4) << " "
-       << toBinary(gr, 2) << " x 2^(";
-  if(exp > 0) cout << "+";
-  cout << exp << ")" << endl;
+/*  double toFloat(unsign int, bool)
+ *  Description: Converts a significand stored in an unsigned integer to its
+ *  floating point value. Returns that value as a double
+ */
+double toFloat(unsigned int sig, bool negative) {
+  if(sig == 0) return 0.0;
+  return (((sig >> 2) & 0xF) / 16.0 + 1) * (negative ? -1 : 1);
 }
 
-void floatingRep(unsigned int sign, unsigned int hide, unsigned int frac,
-                 int exp, float val, string label) {
-  cout << right << setfill(' ') << setw(16) << label << (!sign ? "+" : "-")
-       << left <<setw(6) << setfill('0') << hide + frac / 16.0 << " x 2^("
-       << ((exp > 0) ? "+" : "") << exp << ") = " << val << endl;
+/*  void invert(unsigned int, bool)
+ *  Description: Performs two's complement on a significand (stored in unsigned
+ *  integer) passed by reference. In addition, flips the negative flag
+ *  associated with the significand.
+ */
+void invert(unsigned int &sig, bool& negative) {
+  sig = ((~sig) & 0xFF) + 1;  // Two's complement is saved over original var
+  negative = !negative;
+}
+
+/*  void internalRep(unsigned int, int, bool, string)
+ *  Description: Extracts the 8-bit floating point internal representation
+ *  from a passed significand and prints it out with formatting to cout
+ */
+void internalRep(unsigned int sig, int exp, bool extra, string type) {
+  unsigned int hide = (sig >> 6) & 0x3;
+  unsigned int frac = (sig >> 2) & 0xF;
+  unsigned int gr = sig & 0x3;
+
+  cout << "internal rep of " << left << showpos << setfill(' ')
+       << setw(14 - extra) << type << toBinary(hide, (extra ? 2 : 1)) << "."
+       << toBinary(frac, 4) << " " << toBinary(gr, 2) << " x 2^(" << exp << ")"
+       << endl;
+}
+
+/*  void roundEven(unsigned int, int)
+ *  Description: If the guard bit of a passed signficand is set, rounds up
+ *  (when fraction is odd) or down (when fraction is already even). Otherwise,
+ *  does nothing
+ */
+void roundEven(unsigned int &sig, int &exp) {
+  if((sig & 0x3) >= 0x2) {  // Mask for guard bits and compare > 0b10
+    if((sig >> 2) & 0x1) sig = sig + 0x4; // If fraction is odd, increment it
+    cout << "sum rounded" << endl;
+    internalRep(sig, exp, true, "sum:"); // Print resultant representation
+  }
+}
+
+/*  void normalize(unsigned int, int)
+ *  Description: If the significand's hidden bit is not 1, shifts left or right
+ *  depending on whether it is too small or too large, respectively
+ */
+void normalize(unsigned int &sig, int &exp) {
+  bool normalized = false;
+  while (sig >= 0x80) {       // Check significand > 0b10000000 (too large)
+    sig = (sig & 0xFF) >> 1;  // Shift bits right
+    exp++;                    // Increment exponent
+    normalized = true;
+  }
+  while (sig < 0x40) {        // Check significand < 0b1000000 (too small)
+    sig = sig << 1;           // Shift bits left
+    exp--;                    // Decrement exponent
+    normalized = true;
+  }
+  if (normalized) {
+    cout << "sum normalized" << endl;
+    internalRep(sig, exp, true, "sum:");
+  }
+}
+
+/*  bool shift(unsigned int, int, int)
+ *  Description: Shifts exponent of a significand to match another significand's
+ *  exponent. Precondition is that target's exponent is larger than sig's
+ */
+bool shift(unsigned int &sig, int &exp, int target) {
+  if (exp == target) return true;
+  cout << "second operand shifted to equalize exponents" << endl;
+  exp++;
+  sig = sig >> 1;
+  internalRep(sig, exp, false, "second value:");
+  return false;
+}
+
+/*  void encoding(unsigned int, string)
+ *  Description: Prints out the binary encoding of a passed integer, with
+ *  formatting
+ */
+void encoding(unsigned int i, string type) {
+  cout << "encoding of " << type << right << setw(10) << toBinary(i, 8) << endl;
+}
+
+/*  void floatingRep(double, int, string)
+ *  Description: Prints out a decimal significand in scientific notation
+ *  along with its exponent
+ */
+void floatingRep(double val, int exp, string type) {
+  double fin = val;
+  if(exp > 0) for(int i = 0; i < exp; i++) fin = fin * 2;
+  else for (int i = 0; i > exp; i--) fin = fin / 2;
+  cout << right << setfill(' ') << setw(16) << type << " " << showpos
+       << left << setw(7) << setfill('0') << val << " x 2^("
+       << exp << ") = " << fin << endl;
+}
+
+/*  void extract(unsigned int, bool, int, unsigned int)
+ *  Description: Extracts the appropriate bits for a binary significand from
+ *  an 8-bit binary encoding and stores them into a corresponding signficand
+ */
+void extract(unsigned int value, bool &negative, int &exp, unsigned int &sig) {
+  negative = (value >> 7) & 0x1;        // sign      -> 1 bit
+  sig = ((value & 0xF) | 0x10) << 2;    // hidden    -> 1 bit (2 for sum)
+                                        // fraction  -> 4 bits
+  exp = ((value >> 4) & 0x7) - 4;       // exponent  -> 3 bits
+                                        // also, unbias exponent (subract 4)
+  if (exp == -4) sig = 0;   // Set significand to 0, if biased exponent = 0
 }
 
 int main() {
   // Container variable declarations
   // All but exponent and value are unsigned to simplify comparison logic
   // Ex: 0b1000 > 0b0111
-  unsigned int x, y, s = 256;
-  unsigned int x_sign, x_hide, x_frac, x_gr;
-  unsigned int y_sign, y_hide, y_frac, y_gr;
-  unsigned int s_sign, s_hide, s_frac, s_gr;
-  int x_exp, y_exp, s_exp;
-  float x_val, y_val, s_val;
+  unsigned int x, y, s = 256;         // Inputted integers, 0-255
+  unsigned int x_sig, y_sig, s_sig;   // Floating-point significands
+  bool x_neg, y_neg, s_neg;           // Negative flags, if negative then true
+  int x_exp, y_exp, x_oexp, y_oexp, s_exp, s_oexp;  // Exponents
+  double x_val, y_val, s_val;         // Decimal values
 
   // Prompt terminal for input of two unsigned integers in the range 0-255
   while(x < 0 || x > 255 || y < 0 || y > 255) {
@@ -56,249 +171,126 @@ int main() {
   cout << "encoding of second value: " << setw(13) << toBinary(y, 8) << endl << endl;
 
   // Assign variables
-  x_sign = (x >> 7) & 1;          // sign = sign     -> 1 bit
-  x_hide = 1;                     // hide = hidden   -> 1 bit (2 for sum)
-  x_exp = ((x >> 4) & 0x7) - 4;   // exp = exponent  -> 3 bits
-  x_frac = x & 0xf;               // frac = fraction -> 4 bits
-  x_gr = 0;
+  extract(x, x_neg, x_exp, x_sig);
+  extract(y, y_neg, y_exp, y_sig);
 
-  y_sign = (y >> 7) & 1;
-  y_hide = 1;
-  y_exp = ((y >> 4) & 0x7) - 4;
-  y_frac = y & 0xf;
-  y_gr = 0;
+  // Calculate floating point values of x and y
+  x_val = toFloat(x_sig, x_neg);
+  y_val = toFloat(y_sig, y_neg);
+
+  // If original exponent was 0, set value and exponent to 0
+  if(x_exp == -4) {
+    x_val = 0;
+    x_exp = 0;
+    x_neg = false;
+  }
+  if(y_exp == -4) {
+    y_val = 0;
+    y_exp = 0;
+    y_neg = false;
+  }
+
+  // Save original exponents for future output
+  x_oexp = x_exp;
+  y_oexp = y_exp;
 
   // Display internal representations of x and y
-  internalRep(x_hide, x_frac, x_gr, x_exp, "first value:");
-  internalRep(y_hide, y_frac, y_gr, y_exp, "second value:");
+  internalRep(x_sig, x_exp, false, "first value:");
+  internalRep(y_sig, y_exp, false, "second value:");
 
   cout << "hidden bit---------------------^ ffff gr" << endl;
   cout << "4-bit fraction-------------------^^^^" << endl << endl;
 
-  // Display floating point values of x and y
-  x_val = (x_hide + x_frac / 16.0) * pow(2, x_exp);
-  floatingRep(x_sign, x_hide, x_frac, x_exp, x_val, "first value is:");
-
-  y_val = (y_hide + y_frac / 16.0) * pow(2, y_exp);
-  floatingRep(y_sign, y_hide, y_frac, y_exp, y_val, "second value is:");
-
   /* Begin floating-point addition */
-
   cout << endl << "addition of the values: " << endl;
+
   // If x's exponent is greater than y's, swap all variables
   if (y_exp > x_exp) {
     cout << "operands are swapped" << endl;
-    int t_sign, t_frac, t_exp;
+    unsigned int t_sig;
+    int t_exp;
+    bool t_neg;
 
-    t_sign = x_sign;  // Store temp = x
-    t_frac = x_frac;
+    t_sig = x_sig;  // Store temp = x
     t_exp  = x_exp;
+    t_neg = x_neg;
 
-    x_sign = y_sign;  // Load x = y
-    x_frac = y_frac;
+    x_sig = y_sig;  // Load x = y
+    x_neg = y_neg;
     x_exp  = y_exp;
 
-    y_sign = t_sign;  // Load y = temp
-    y_frac = t_frac;
+    y_sig = t_sig;  // Load y = temp
+    y_neg = t_neg;
     y_exp  = t_exp;
 
-    internalRep(x_hide, x_frac, x_gr, x_exp, "first value:");
-    internalRep(y_hide, y_frac, y_gr, y_exp, "second value:");
+    internalRep(x_sig, x_exp, false, "first value:");
+    internalRep(y_sig, y_exp, false, "second value:");
   }
 
   // Left shift the signficand of y until x's and y's exponents are equal
-  while (x_exp != y_exp) {
-    cout << "second operand shifted to equalize exponents" << endl;
-    y_gr = ((y_frac & 1) << 1) | (y_gr>>1);
-    y_frac = (y_frac >> 1) | (y_hide << 3);
-    y_hide = 0;
-    y_exp++;
+  while (!shift(y_sig, y_exp, x_exp));
 
-    internalRep(y_hide, y_frac, y_gr, y_exp, "second value:");
-  }
 
-  // If x's sign bit is set, perform two's complement
-  if (x_sign == 1) {
-    // Invert bits and add 1 to the least significant bit
-    x_frac = ~x_frac & 0xf;
-    x_hide = ~x_hide & 0x3;
-    x_gr = (~x_gr & 0x3) + 1;
+  bool negated = false;
 
-    // Carry if overflow occurs
-    if(x_gr > 0x3) {
-      x_frac = x_frac + 1;
-      x_gr = x_gr & 0x3;
-      if(x_frac > 0xf) x_hide = (x_hide + 1) & 0x3;
+  if (x_neg != y_neg) {
+    // If x's sign bit is set, perform two's complement
+    if (x_neg) {
+      invert(x_sig, x_neg);
+      cout << "first operand negated" << endl;
+      internalRep(x_sig, x_exp, false, "first value:");
+      negated = true;
     }
-
-    cout << "first operand negated" << endl;
-    internalRep(x_hide, x_frac, x_gr, x_exp, "first value:");
-  }
-
-  // If y's sign bit is set, perform two's complement
-  if (y_sign == 1) {
-    // Invert bits and add 1 to the least significant bit
-    y_frac = ~y_frac & 0xf;
-    y_hide = ~y_hide & 0x3;
-    y_gr = (~y_gr & 0x3) + 1;
-
-    // Carry if overflow occurs
-    if(y_gr > 0x3) {
-      y_frac = y_frac + 1;
-      y_gr = y_gr & 0x3;
-      if(y_frac > 0xf) y_hide = (y_hide + 1) & 0x3;
+    // If y's sign bit is set, perform two's complement
+    if (y_neg) {
+      invert(y_sig, y_neg);
+      cout << "second operand negated" << endl;
+      internalRep(y_sig, y_exp, false, "second value:");
+      negated = true;
     }
-
-    cout << "second operand negated" << endl;
-    internalRep(y_hide, y_frac, y_gr, y_exp, "second value:");
+    s_neg = false;
   }
+  // If both signs are equal, sum shares that sign
+  else s_neg = y_neg;
 
   // Add significands of x and y
   cout << "addition takes place" << endl;
-  internalRep(x_hide, x_frac, x_gr, x_exp, "first value:");
-  internalRep(y_hide, y_frac, y_gr, y_exp, "second value:");
+  internalRep(x_sig, x_exp, false, "first value:");
+  internalRep(y_sig, y_exp, false, "second value:");
 
-  // Flags for overflow and carry
-  bool overflow = false;      // True if the second bit of s_hide is set
-  bool carry = false;         // True if a bit is carried out of s_hide
+  s_sig = (x_sig + y_sig) & 0xFF;         // Add significands
+  s_exp = y_exp;                          // Sum's exponent is same as addends'
+  s_oexp = s_exp;                         // Save sum's exponent
+  internalRep(s_sig, s_exp, true, "sum:");
 
-  s_exp = x_exp;              // Exponent of sum is same as addends
-  s_gr = x_gr + y_gr;         // Add guard bits
-  s_frac = x_frac + y_frac;   // Add fraction bits
-
-  if(s_gr > 0x3) {            // If a bit is carried out of s_gr
-    s_frac = s_frac + 0x1;    // Add 1 to least significant bit of s_frac
-    s_gr = s_gr & 0x3;        // Mask s_gr back to the range 0b00-0b11
-  }
-
-  s_hide = x_hide + y_hide;   // Add hidden bits
-
-  if(s_frac > 0xf) {          // If a bit is carried out of s_frac
-    s_hide = s_hide + 0x1;    // Add 1 to least significant bit of s_hide
-    s_frac = s_frac & 0xf;    // Mask s_frac back to the range 0b0000-0b1111
-  }
-
-  // Set overflow flag if s_hide > 0b01
-  if(s_hide > 0x1) {
-    cout << "overflow set to true" << endl;
-    overflow = true;
-  }
-
-  // Set carry flag if s_hide > 0b11
-  if(s_hide > 0x3) {
-    cout << "carry set to true" << endl;
-    carry = true;
-    s_hide = s_hide & 0x3;
-  }
-
-  // Tentatively set sign bit of sum to most significant bit of s_hide
-  s_sign = (s_hide >> 1) & 0x1;
-
-  internalRep(s_hide, s_frac, s_gr, s_exp, "sum:");
-
-  if(carry && overflow) {
+  // If one of the addends was negated and addition results in overflow,
+  // negate the sum
+  if(negated && s_sig >= 0x80) {
     cout << "sum negated" << endl;
-    s_frac = ~s_frac & 0xf;
-    s_hide = ~s_hide & 0x3;
-    s_gr = (~s_gr & 0x3) + 1;
-
-    if(s_gr > 0x3) {
-      s_frac = s_frac + 1;
-      s_gr = s_gr & 0x3;
-    }
-
-    if(s_frac > 0xf) {
-      s_hide = (s_hide + 1) & 0x3;
-    }
-
-    s_frac = s_frac & 0xf;
-
-    internalRep(s_hide, s_frac, s_gr, s_exp, "sum:");
+    invert(s_sig, s_neg);
+    internalRep(y_sig, y_exp, true, "sum:");
   }
 
-  if(!carry && overflow) {
-    cout << "sum normalized" << endl;
-
-    while ((s_hide & 0x1) < 0x1) {
-      s_gr = ((s_frac & 1) << 1) | (s_gr>>1);
-      s_frac = (s_frac >> 1) | (s_hide & 0x1);
-      s_hide = (s_hide >> 1) & 0x3;
-      s_exp++;
-    }
-
-    internalRep(s_hide, s_frac, s_gr, s_exp, "sum:");
-
-    s_sign = 0;
+  if(s_sig != 0) {           // Ignore if sum exponent = 0
+  normalize(s_sig, s_exp);   // Normalize the sum (shift), as needed
+  roundEven(s_sig, s_exp);   // Round if guard bit is set
+  normalize(s_sig, s_exp);   // Normalize to ensure significand is 01.XXXX
+  s_oexp = s_exp;            // Save sum's original exponent
+  s_exp += 4;                // Re-bias exponent
   }
 
-  else {
-    cout << "sum normalized" << endl;
-    while (s_hide < 0x1) {
-      s_hide = ((s_hide << 1) & 0x1) | ((s_frac >> 3) & 1);
-      s_frac = ((s_frac << 1) & 0xf) | ((s_gr >> 1) & 1);
-      s_gr = (s_gr << 1) & 0x3;
-      s_exp--;
-    }
-    internalRep(s_hide, s_frac, s_gr, s_exp, "sum:");
-  }
-
-  if(((s_gr >> 1) & 0x1) == 1) {
-
-
-  if((s_frac & 0x1) == 1) {
-    cout << "sum rounded" << endl;
-    s_frac = s_frac + 1;
-    if(s_gr > 0x3) {
-      s_frac = s_frac + 0x1;
-      s_gr = s_gr & 0x3;
-    }
-    s_hide = x_hide + y_hide;
-    if(s_frac > 0xf) {
-      s_hide = s_hide + 0x1;
-      s_frac = s_frac & 0xf;
-    }
-    s_sign = x_sign + y_sign;
-
-    if(s_hide > 0x1) {
-      s_sign = s_sign + 0x1;
-      s_hide = s_hide & 1;
-    }
-
-    s_sign = s_sign & 0x1;
-
-  }
-  }
-
-  if(s_hide < 0x1) {
-    cout << "sum normalized" << endl;
-    while (s_hide < 0x1) {
-      s_hide = ((s_hide << 1) & 0x1) | ((s_frac >> 3) & 1);
-      s_frac = ((s_frac << 1) & 0xf) | ((s_gr >> 1) & 1);
-      s_gr = (s_gr << 1) & 0x3;
-      s_exp--;
-    }
-    internalRep(s_hide, s_frac, s_gr, s_exp, "sum:");
-  }
-
+  s_val = toFloat(s_sig, s_neg);  // Calculate the floating point value of sum
   cout << "hidden bit---------------------^ ffff gr" << endl;
   cout << "4-bit fraction-------------------^^^^" << endl << endl;
-  cout << "s_sign is " << toBinary(s_sign, 2) << endl;
 
-  s_val = ((s_hide & 0x1) + (s_frac & 0xf) / 16.0) * pow(2, s_exp);
+  // Assemble the binary encoding of sum
+  s = ((s_sig >> 2) & 0xF) + (((s_exp) & 0x7) << 4) + ((s_neg ? 1 : 0) << 7);
+  encoding(s, "returned value:");
 
-  s_exp += 4;
-  s = s_sign;
-    cout << "s is " << toBinary(s, 1) << endl;
-  s = (s << 3) + (s_exp);
-    cout << "s is " << toBinary(s, 5) << endl;
-  s = (s << 4) + s_frac;
-    cout << "s is " << toBinary(s, 7) << endl;
-  s_val = (s_hide + s_frac / 16.0) * pow(2, s_exp);
-  cout << "encoding of returned value:" << setw(11) << toBinary(s, 8) << endl << endl;
-
-  floatingRep(x_sign, x_hide, x_frac, x_exp, x_val, "");
-  floatingRep(y_sign, y_hide, y_frac, y_exp, y_val, "added to ");
-  floatingRep(s_sign, s_hide, s_frac, s_exp - 4, s_val, "equals ");
+  // Display the floating point addends and the resultant sum
+  floatingRep(x_val, x_oexp, "");
+  floatingRep(y_val, y_oexp, "added to");
+  floatingRep(s_val, s_oexp, "equals");
 
   return 0;
 }
